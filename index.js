@@ -30,9 +30,7 @@ class LinkedList {
   }
 
   deleteItem(data) {
-    if (!this.head) {
-      throw new Error("Cannot delete from an empty list.");
-    }
+    if (!this.head) return false;
 
     if (this.head.data === data) {
       this.head = this.head.next;
@@ -50,15 +48,16 @@ class LinkedList {
       current = current.next;
     }
 
-    throw new Error(`Element with data "${data}" not found in the list.`);
+    return false;
   }
 
   addNthElement(data, position) {
     if (typeof position !== "number") {
       throw new TypeError("Position must be a number.");
     }
+
     if (position < 0 || position >= this.size) {
-      throw new RangeError("Position out of bounds.");
+      return false;
     }
 
     const newNode = new Node(data);
@@ -100,6 +99,10 @@ try {
   list.addNthElement(99, 1);
   console.log("After adding 99 after index 1:", list.toArray());
 
+  if (!list.deleteItem(500)) {
+    console.log("Element 500 is not found.");
+  }
+
   // Trigger error test:
   //   list.addNthElement(5, 100);
 } catch (error) {
@@ -122,33 +125,39 @@ class NumberedCollection {
     }
 
     this.#count++;
-    this[this.#count] = value;
+    const key = `*${this.#count}*`;
+    this[key] = value;
     return this.#count;
   }
 
   get(position) {
-    if (typeof position !== "number" || position <= 0) {
-      throw new RangeError("Position must be a positive number");
+    const key = `*${position}*`;
+    if (!(key in this)) {
+      throw new RangeError(`Element with key ${key} does not exist`);
     }
-    return this[position];
+    return this[key];
   }
 
   remove(position) {
-    if (typeof position !== "number" || !this[position]) {
+    const key = `*${position}*`;
+    if (!(key in this)) {
       return false;
     }
-    delete this[position];
+    delete this[key];
     return true;
   }
-
   [Symbol.iterator]() {
-    const values = Object.values(this);
+    const keys = Object.keys(this);
     let index = 0;
+    const self = this;
+
     return {
       next() {
-        return index < values.length
-          ? { done: false, value: values[index++] }
-          : { done: true };
+        if (index < keys.length) {
+          const currentKey = keys[index++];
+          return { done: false, value: self[currentKey] };
+        }
+        return { done: true };
       },
     };
   }
